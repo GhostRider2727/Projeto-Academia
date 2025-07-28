@@ -27,9 +27,9 @@ GymSync é uma plataforma mobile criada para modernizar a experiência em academ
 
 | Tecnologia | Descrição |
 |-----------|-----------|
-| `C#` / `Java` | Interface mobile multiplataforma |
-| `Node.js` / `HTML` / `CSS` | Backend e autenticação |
-| `JavaScript` / `PostgreSQL` | Banco de dados flexível |
+| `HTML` / `CSS` / `JavaScript` /  | Interface mobile multiplataforma |
+| `Node.js` / C#  / Java | Backend e autenticação |
+| `PostgreSQL` | Banco de dados flexível |
 | `Cloud Storage` | Armazenamento de imagens e GIFs |
 | `API QR Code` | Geração e leitura de QR codes |
 
