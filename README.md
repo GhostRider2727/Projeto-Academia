@@ -33,3 +33,4 @@ GymSync é uma plataforma mobile criada para modernizar a experiência em academ
 | `Cloud Storage` | Armazenamento de imagens e GIFs |
 | `API QR Code` | Geração e leitura de QR codes |
 
+"# https---github.com-GhostRider2727-Projeto-Academia" 
