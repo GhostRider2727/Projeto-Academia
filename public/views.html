@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Visualizar Dados</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #resultado {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: #f9f9f9;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Consultas do Sistema</h1>
+
+  <button onclick="carregar('/alunos')">📋 Listar Alunos</button>
+  <button onclick="carregar('/avaliacoes')">📊 Listar Avaliações</button>
+  <button onclick="carregar('/treinos')">💪 Listar Treinos</button>
+
+  <div id="resultado">Clique em um botão para ver os dados aqui...</div>
+
+  <script>
+    async function carregar(endpoint) {
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error("Erro na requisição");
+        const dados = await res.json();
+        document.getElementById('resultado').textContent = JSON.stringify(dados, null, 2);
+      } catch (err) {
+        document.getElementById('resultado').textContent = "Erro: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,89 +1,169 @@
 const express = require('express');
 const path = require('path');
+const bodyParser = require('body-parser');
+const { Aluno, Instrutor, Treino, Plano, Matricula,
+  Local, Academia, Maquina, Exercicio, TreinoExercicio,
+  AvaliacaoFisica, Pagamento, PostTimeline, CurtidaPost } = require('./db'); // Importa o model User
+
 const app = express();
 const port = 3000;
 
-// Middleware que expõe a pasta "public"
+// Middleware
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json()); // necessário para req.body funcionar
 
-// Rota da página principal
-app.get('/', (req, res) => {
-    res.send('Servidor Express funcionando!');
+// Página HTML com botões
+app.get('/views', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'views.html'));
 });
 
-// Nova rota para a página "Sobre"
-app.get('/sobre', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'sobre.html'));
+// Rota alunos
+app.get('/alunos', async (req, res) => {
+  const alunos = await Aluno.findAll();
+  res.json(alunos);
 });
-// Nova rota para a página "login pc"
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+
+// Rota avaliacoes
+app.get('/avaliacoes', async (req, res) => {
+  const avaliacoes = await AvaliacaoFisica.findAll({ include: Aluno });
+  res.json(avaliacoes);
 });
-// Rota para criar um novo usuário
-app.post('/usuarios', async (req, res) => {
+
+// Rota treinos
+app.get('/treinos', async (req, res) => {
+  const treinos = await Treino.findAll({ include: Aluno });
+  res.json(treinos);
+});
+// ROTA CREATE – Inserir aluno (POST)
+app.post('/alunos', async (req, res) => {
   try {
-    const { firstName, lastName } = req.body;
-    const newUser = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-      },
-    });
-    res.status(201).json(newUser);
+    const { nome, email, data_nascimento, telefone, senha } = req.body;
+    const novoAluno = await Aluno.create({ nome, email, data_nascimento, telefone, senha });
+    res.status(201).json(novoAluno);
   } catch (error) {
-    console.error("Erro ao criar usuário:", error);
-    res.status(500).json({ error: "Não foi possível criar o usuário." });
+    console.error("Erro ao criar aluno:", error);
+    res.status(500).json({ error: "Não foi possível criar o aluno." });
   }
 });
-
-// Rota para listar todos os usuários
-app.get('/usuarios', async (req, res) => {
+//ROTA READ – Listar todos os alunos (GET)
+app.get('/alunos', async (req, res) => {
   try {
-    const allUsers = await prisma.user.findMany();
-    res.json(allUsers);
+    const alunos = await Aluno.findAll();
+    res.json(alunos);
   } catch (error) {
-    console.error("Erro ao buscar usuários:", error);
-    res.status(500).json({ error: "Não foi possível buscar os usuários." });
+    console.error("Erro ao buscar alunos:", error);
+    res.status(500).json({ error: "Não foi possível buscar os alunos." });
   }
 });
-
-// Rota para buscar um usuário por ID
-app.get('/usuarios/:id', async (req, res) => {
+//ROTA READ – Buscar aluno por ID (GET)
+app.get('/alunos/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await prisma.user.findUnique({
-      where: {
-        id: parseInt(id),
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado." });
-    }
-    res.json(user);
+    const aluno = await Aluno.findByPk(id);
+    if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
+    res.json(aluno);
   } catch (error) {
-    console.error("Erro ao buscar usuário por ID:", error);
-    res.status(500).json({ error: "Não foi possível buscar o usuário." });
+    console.error("Erro ao buscar aluno:", error);
+    res.status(500).json({ error: "Não foi possível buscar o aluno." });
   }
+});
+//ROTA UPDATE – Atualizar aluno (PUT)
+app.put('/alunos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, email, data_nascimento, telefone, senha } = req.body;
+
+    const aluno = await Aluno.findByPk(id);
+    if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
+
+    await aluno.update({ nome, email, data_nascimento, telefone, senha });
+    res.json(aluno);
+  } catch (error) {
+    console.error("Erro ao atualizar aluno:", error);
+    res.status(500).json({ error: "Não foi possível atualizar o aluno." });
+  }
+});
+//ROTA DELETE – Excluir aluno (DELETE)
+app.delete('/alunos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const aluno = await Aluno.findByPk(id);
+    if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
+
+    await aluno.destroy();
+    res.json({ message: "Aluno excluído com sucesso." });
+  } catch (error) {
+    console.error("Erro ao excluir aluno:", error);
+    res.status(500).json({ error: "Não foi possível excluir o aluno." });
+  }
+});
+
+
+
+// Rota principal
+app.get('/', (req, res) => {
+  res.send('Servidor Express funcionando com Sequelize!');
+});
+
+// Página sobre
+app.get('/sobre', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sobre.html'));
+});
+
+// Página login
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+// Página de views
+app.get('/views', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'views.html'));
+});
+
+// Criar aluno
+app.post('/alunos', async (req, res) => {
+  try {
+    const { nome, email } = req.body;
+    const novoAluno = await Aluno.create({ nome, email });
+    res.status(201).json(novoAluno);
+  } catch (error) {
+    console.error("Erro ao criar aluno:", error);
+    res.status(500).json({ error: "Não foi possível criar o aluno." });
+  }
+});
+
+// Listar alunos
+app.get('/alunos', async (req, res) => {
+  try {
+    const alunos = await Aluno.findAll();
+    res.json(alunos);
+  } catch (error) {
+    console.error("Erro ao buscar alunos:", error);
+    res.status(500).json({ error: "Não foi possível buscar os alunos." });
+  }
+});
+
+// Buscar aluno por ID
+app.get('/alunos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const aluno = await Aluno.findByPk(id);
+
+    if (!aluno) {
+      return res.status(404).json({ error: "Aluno não encontrado." });
+    }
+    res.json(aluno);
+  } catch (error) {
+    console.error("Erro ao buscar aluno:", error);
+    res.status(500).json({ error: "Não foi possível buscar o aluno." });
+  }
+});
+
+// Página de erro 404 (sempre por último)
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'public', 'erro_404.html'));
 });
 
 // --- INÍCIO DO SERVIDOR ---
-
 app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
-
-// Desconexão do Prisma ao encerrar a aplicação
-process.on('SIGINT', async () => {
-  await prisma.$disconnect();
-  console.log('Conexão com o banco de dados encerrada.');
-  process.exit(0);
-});
-// Rota para a página de erro 404 (sempre por último)
-app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', 'erro_404.html'));
-});
-
-app.listen(port, () => {
-    console.log(`Servidor rodando em http://localhost:${port}`);
+  console.log(`🚀 Servidor rodando em http://localhost:${port}`);
 });
