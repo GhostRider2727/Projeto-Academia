@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de Treinos</title>
+</head>
+<body>
+  <h1>Treinos</h1>
+  <div id="listaTreinos"></div>
+
+  <script>
+    fetch("http://localhost:3000/treinos/listar")
+      .then(response => response.json())
+      .then(treinos => {
+        const container = document.getElementById("listaTreinos");
+
+        treinos.forEach(t => {
+          const divTreino = document.createElement("div");
+          divTreino.style.border = "1px solid black";
+          divTreino.style.margin = "10px";
+          divTreino.style.padding = "10px";
+
+          let html = `<h3>Treino do usuário ${t.usuarioId}</h3><ul>`;
+          t.exercicios.forEach(e => {
+            html += `<li>${e.nome} - ${e.grupoMuscular} - ${e.series}x${e.repeticoes} - ${e.carga}</li>`;
+          });
+          html += "</ul>";
+
+          divTreino.innerHTML = html;
+          container.appendChild(divTreino);
+        });
+      })
+      .catch(err => console.error("Erro ao carregar treinos:", err));
+  </script>
+</body>
+</html>

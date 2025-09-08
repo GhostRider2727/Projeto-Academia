@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de Exercícios</title>
+</head>
+<body>
+  <h1>Exercícios</h1>
+  <ul id="listaExercicios"></ul>
+
+  <script>
+    fetch("http://localhost:3000/exercicios/listar")
+      .then(response => response.json())
+      .then(exercicios => {
+        const ul = document.getElementById("listaExercicios");
+        exercicios.forEach(e => {
+          const li = document.createElement("li");
+          li.textContent = `${e.nome} - ${e.grupoMuscular} - ${e.series}x${e.repeticoes} - ${e.carga}`;
+          ul.appendChild(li);
+        });
+      })
+      .catch(err => console.error("Erro ao carregar exercícios:", err));
+  </script>
+</body>
+</html>
