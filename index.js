@@ -16,6 +16,10 @@ app.use(bodyParser.json()); // necessário para req.body funcionar
 app.get('/views', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'views.html'));
 });
+// Página editar com botões
+app.get('/editar', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'editar.html'));
+});
 
 // Rota alunos
 app.get('/alunos', async (req, res) => {
@@ -167,3 +171,5 @@ app.use((req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${port}`);
 });
+//git config --global user.name "Manganao"
+//git config --global user.email "ens_gabrielbielick@ugv.edu.br"

@@ -3,7 +3,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 
 
 // Conexão com PostgreSQL
-const sequelize = new Sequelize('app_academia', 'postgres', '1234', {
+const sequelize = new Sequelize('app_academia', 'postgres', 'postgres', {
   host: 'localhost',
   dialect: 'postgres'
 });
