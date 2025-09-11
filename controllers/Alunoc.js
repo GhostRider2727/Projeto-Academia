@@ -1,63 +1,9 @@
-const express = require('express');
-const path = require('path');
-const bodyParser = require('body-parser');
-const { Aluno, Instrutor, Treino, Plano, Matricula,
-  Local, Academia, Maquina, Exercicio, TreinoExercicio,
-  AvaliacaoFisica, Pagamento, PostTimeline, CurtidaPost } = require('./db'); // Importa o model User
+cosnt Aluno = require('../models/Aluno');
+export const aluno = async (req, res) => {
+    try {
+        const alunos = await Aluno.findAll();
 
-const app = express();
-const port = 3000;
-
-// Middleware
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.json()); // necessário para req.body funcionar
-
-// Rota principal
-app.get('/', (req, res) => {
-  res.send('Servidor Express funcionando com Sequelize!');
-});
-
-// Página sobre
-app.get('/sobre', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sobre.html'));
-});
-
-// Página login
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-// Página de views
-app.get('/views', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'views.html'));
-});
-
-// Página HTML com botões
-app.get('/views', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'views.html'));
-});
-// Página editar com botões
-app.get('/editar', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'editar.html'));
-});
-
-// Rota alunos
-app.get('/alunos', async (req, res) => {
-  const alunos = await Aluno.findAll();
-  res.json(alunos);
-});
-
-// Rota avaliacoes
-app.get('/avaliacoes', async (req, res) => {
-  const avaliacoes = await AvaliacaoFisica.findAll({ include: Aluno });
-  res.json(avaliacoes);
-});
-
-// Rota treinos
-app.get('/treinos', async (req, res) => {
-  const treinos = await Treino.findAll({ include: Aluno });
-  res.json(treinos);
-});
-// ROTA CREATE – Inserir aluno (POST)
+        // ROTA CREATE – Inserir aluno (POST)
 app.post('/alunos', async (req, res) => {
   try {
     const { nome, email, data_nascimento, telefone, senha } = req.body;
@@ -121,10 +67,6 @@ app.delete('/alunos/:id', async (req, res) => {
   }
 });
 
-
-
-
-
 // Criar aluno
 app.post('/alunos', async (req, res) => {
   try {
@@ -163,15 +105,50 @@ app.get('/alunos/:id', async (req, res) => {
     res.status(500).json({ error: "Não foi possível buscar o aluno." });
   }
 });
+// Funções genéricas para qualquer modelo
+const createRecord = (Model) => async (data) => {
+  try {
+    return await Model.create(data);
+  } catch (error) {
+    throw new Error(`Erro ao criar registro: ${error.message}`);
+  }
+};
 
-// Página de erro 404 (sempre por último)
-app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'public', 'erro_404.html'));
-});
+const findAllRecords = (Model) => async (include = []) => {
+  try {
+    return await Model.findAll({ include });
+  } catch (error) {
+    throw new Error(`Erro ao buscar registros: ${error.message}`);
+  }
+};
 
-// --- INÍCIO DO SERVIDOR ---
-app.listen(port, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${port}`);
-});
-//git config --global user.name "Manganao"
-//git config --global user.email "ens_gabrielbielick@ugv.edu.br"
+const findRecordById = (Model) => async (id, include = []) => {
+  try {
+    const record = await Model.findByPk(id, { include });
+    if (!record) throw new Error('Registro não encontrado');
+    return record;
+  } catch (error) {
+    throw new Error(`Erro ao buscar registro: ${error.message}`);
+  }
+};
+
+const updateRecord = (Model) => async (id, data) => {
+  try {
+    const record = await Model.findByPk(id);
+    if (!record) throw new Error('Registro não encontrado');
+    return await record.update(data);
+  } catch (error) {
+    throw new Error(`Erro ao atualizar registro: ${error.message}`);
+  }
+};
+
+const deleteRecord = (Model) => async (id) => {
+  try {
+    const record = await Model.findByPk(id);
+    if (!record) throw new Error('Registro não encontrado');
+    await record.destroy();
+    return { message: 'Registro excluído com sucesso' };
+  } catch (error) {
+    throw new Error(`Erro ao excluir registro: ${error.message}`);
+  }
+};
