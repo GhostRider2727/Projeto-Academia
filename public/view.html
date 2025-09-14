@@ -1,327 +1,206 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualização de Pagamentos Detalhados</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #6e8efb, #a777e3);
-            color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        
-        .description {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .data-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-        
-        .data-header {
-            padding: 15px 20px;
-            background-color: #6c757d;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .refresh-btn {
-            background-color: #17a2b8;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .refresh-btn:hover {
-            background-color: #138496;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-        }
-        
-        tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #6c757d;
-        }
-        
-        .error {
-            color: #dc3545;
-            padding: 15px;
-            text-align: center;
-            background-color: #f8d7da;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        
-        .filters {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .filter-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        .filter-group input, .filter-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        
-        .apply-filters {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            align-self: flex-end;
-            margin-bottom: 15px;
-        }
-        
-        .apply-filters:hover {
-            background-color: #218838;
-        }
-        
-        @media (max-width: 768px) {
-            .filters {
-                flex-direction: column;
-            }
-            
-            th, td {
-                padding: 8px 10px;
-            }
-            
-            .data-header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnóstico - Rotas da API</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #f5f7fa; color: #333; line-height: 1.6; padding: 20px; }
+    .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); }
+    h1, h2, h3 { color: #2c3e50; margin-bottom: 20px; }
+    .test-section { margin: 25px 0; padding: 20px; border-radius: 8px; background: #f8f9fa; border-left: 4px solid #3498db; }
+    .success { border-left-color: #2ecc71; background: #e8f5e8; }
+    .error { border-left-color: #e74c3c; background: #ffebee; }
+    .warning { border-left-color: #f39c12; background: #fff3cd; }
+    .endpoint-test { margin: 15px 0; padding: 15px; border-radius: 5px; background: white; border: 1px solid #e0e0e0; }
+    pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow: auto; font-size: 14px; margin-top: 10px; max-height: 300px; }
+    button { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; margin: 10px 0; font-weight: 600; transition: background 0.3s; }
+    button:hover { background: #2980b9; }
+    .loading { opacity: 0.7; cursor: not-allowed; }
+    .error-details { color: #e74c3c; font-weight: 600; }
+    .solution { background: #e8f4f8; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 4px solid #3498db; }
+    .response-info { margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; }
+    .route-info { background: #e8f4f8; padding: 10px; border-radius: 5px; margin: 10px 0; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Visualização de Pagamentos Detalhados</h1>
-            <p class="description">Dados da view vw_pagamentos_detalhado do banco de dados</p>
-        </header>
-        
-        <div class="filters">
-            <div class="filter-group">
-                <label for="search">Pesquisar</label>
-                <input type="text" id="search" placeholder="Digite para filtrar...">
-            </div>
-            <div class="filter-group">
-                <label for="status">Status</label>
-                <select id="status">
-                    <option value="">Todos</option>
-                    <option value="pago">Pago</option>
-                    <option value="pendente">Pendente</option>
-                    <option value="atrasado">Atrasado</option>
-                </select>
-            </div>
-            <button class="apply-filters" id="applyFilters">Aplicar Filtros</button>
-        </div>
-        
-        <div class="data-container">
-            <div class="data-header">
-                <h2>Registros de Pagamentos</h2>
-                <button class="refresh-btn" id="refreshBtn">Atualizar Dados</button>
-            </div>
-            
-            <div class="loading" id="loading">
-                Carregando dados...
-            </div>
-            
-            <div class="error" id="errorMessage" style="display: none;">
-                Erro ao carregar dados.
-            </div>
-            
-            <table id="dataTable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Valor</th>
-                        <th>Data Vencimento</th>
-                        <th>Data Pagamento</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <!-- Os dados serão inseridos aqui via JavaScript -->
-                </tbody>
-            </table>
-        </div>
+  <div class="container">
+    <h1>🔍 Diagnóstico - Rotas da API</h1>
+    <p>Verificando as rotas configuradas no seu servidor Express.</p>
+    
+    <div class="solution">
+      <h3>⚠️ Problema Identificado:</h3>
+      <p>Suas rotas estão configuradas no <strong>singular</strong> mas você está tentando acessar no <strong>plural</strong>.</p>
+      
+      <div class="route-info">
+        <strong>Rotas configuradas:</strong><br>
+        <code>/api/aluno</code>, <code>/api/plano</code>, <code>/api/avaliacao</code>, <code>/api/matricula</code>
+      </div>
+      
+      <div class="route-info">
+        <strong>Rotas que você está tentando acessar:</strong><br>
+        <code>/api/alunos</code>, <code>/api/planos</code>, <code>/api/avaliacoes</code>, <code>/api/matriculas</code>
+      </div>
     </div>
+    
+    <div class="test-section">
+      <h2>Teste das Rotas Configuradas (Singular)</h2>
+      
+      <div class="endpoint-test">
+        <h3>👥 Aluno</h3>
+        <button onclick="testEndpoint('aluno')">Testar /api/aluno</button>
+        <div id="result-aluno">Aguardando teste...</div>
+      </div>
+      
+      <div class="endpoint-test">
+        <h3>📋 Plano</h3>
+        <button onclick="testEndpoint('plano')">Testar /api/plano</button>
+        <div id="result-plano">Aguardando teste...</div>
+      </div>
+      
+      <div class="endpoint-test">
+        <h3>📊 Avaliação</h3>
+        <button onclick="testEndpoint('avaliacao')">Testar /api/avaliacao</button>
+        <div id="result-avaliacao">Aguardando teste...</div>
+      </div>
+      
+      <div class="endpoint-test">
+        <h3>🎫 Matrícula</h3>
+        <button onclick="testEndpoint('matricula')">Testar /api/matricula</button>
+        <div id="result-matricula">Aguardando teste...</div>
+      </div>
+      
+      <div class="endpoint-test">
+        <h3>💪 Treino</h3>
+        <button onclick="testEndpoint('treino')">Testar /api/treino</button>
+        <div id="result-treino">Aguardando teste...</div>
+      </div>
+      
+      <div class="endpoint-test">
+        <h3>💳 Pagamento</h3>
+        <button onclick="testEndpoint('pagamento')">Testar /api/pagamento</button>
+        <div id="result-pagamento">Aguardando teste...</div>
+      </div>
+    </div>
+    
+    <div class="test-section">
+      <h2>Teste das Rotas que Você Tentou Acessar (Plural)</h2>
+      <p>Estas devem retornar erro 404:</p>
+      
+      <div class="endpoint-test">
+        <button onclick="testEndpoint('alunos')">Testar /api/alunos</button>
+        <button onclick="testEndpoint('planos')">Testar /api/planos</button>
+        <button onclick="testEndpoint('avaliacoes')">Testar /api/avaliacoes</button>
+        <button onclick="testEndpoint('matriculas')">Testar /api/matriculas</button>
+        <div id="result-plural">Aguardando teste...</div>
+      </div>
+    </div>
+    
+    <div class="solution">
+      <h3>🛠️ Como Resolver:</h3>
+      <p><strong>Recomendação:</strong> Altere suas rotas no Express para usar o plural (Opção 1)</p>
+      
+      <pre>
+// No seu arquivo index.js, altere de:
+app.use('/api/aluno', AlunoR);
+app.use('/api/plano', PlanoR);
+app.use('/api/avaliacao', AvaliacaoR);
+app.use('/api/matricula', MatriculaR);
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const refreshBtn = document.getElementById('refreshBtn');
-            const applyFiltersBtn = document.getElementById('applyFilters');
-            const loadingElement = document.getElementById('loading');
-            const errorMessage = document.getElementById('errorMessage');
-            const dataTable = document.getElementById('dataTable');
-            const tableBody = document.getElementById('tableBody');
-            
-            // Função para carregar os dados da view
-            async function loadData(filters = {}) {
-                loadingElement.style.display = 'block';
-                errorMessage.style.display = 'none';
-                dataTable.style.display = 'none';
-                
-                try {
-                    // Aqui você faria a chamada para sua API que usa o Sequelize
-                    // Substitua pela URL correta do seu endpoint
-                    let url = '/api/vw_pagamentos_detalhado';
-                    
-                    // Adicionar filtros à URL, se existirem
-                    const queryParams = new URLSearchParams();
-                    if (filters.search) queryParams.append('search', filters.search);
-                    if (filters.status) queryParams.append('status', filters.status);
-                    
-                    if (queryParams.toString()) {
-                        url += '?' + queryParams.toString();
-                    }
-                    
-                    const response = await fetch(url);
-                    
-                    if (!response.ok) {
-                        throw new Error('Erro ao carregar dados');
-                    }
-                    
-                    const data = await response.json();
-                    
-                    // Limpar a tabela
-                    tableBody.innerHTML = '';
-                    
-                    // Preencher a tabela com os dados
-                    data.forEach(item => {
-                        const row = document.createElement('tr');
-                        
-                        // Ajuste estas colunas conforme a estrutura da sua view
-                        row.innerHTML = `
-                            <td>${item.id || ''}</td>
-                            <td>${item.cliente_nome || ''}</td>
-                            <td>R$ ${item.valor ? Number(item.valor).toFixed(2) : '0,00'}</td>
-                            <td>${item.data_vencimento ? formatDate(item.data_vencimento) : ''}</td>
-                            <td>${item.data_pagamento ? formatDate(item.data_pagamento) : ''}</td>
-                            <td><span class="status-badge ${getStatusClass(item.status)}">${item.status || ''}</span></td>
-                        `;
-                        
-                        tableBody.appendChild(row);
-                    });
-                    
-                    // Exibir a tabela e ocultar o loading
-                    loadingElement.style.display = 'none';
-                    dataTable.style.display = 'table';
-                    
-                } catch (error) {
-                    console.error('Erro:', error);
-                    loadingElement.style.display = 'none';
-                    errorMessage.style.display = 'block';
-                    errorMessage.textContent = 'Erro ao carregar dados: ' + error.message;
-                }
-            }
-            
-            // Função para formatar data
-            function formatDate(dateString) {
-                const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-                return new Date(dateString).toLocaleDateString('pt-BR', options);
-            }
-            
-            // Função para determinar a classe CSS com base no status
-            function getStatusClass(status) {
-                switch (status) {
-                    case 'pago': return 'status-paid';
-                    case 'pendente': return 'status-pending';
-                    case 'atrasado': return 'status-overdue';
-                    default: return '';
-                }
-            }
-            
-            // Event listeners
-            refreshBtn.addEventListener('click', () => loadData());
-            applyFiltersBtn.addEventListener('click', () => {
-                const filters = {
-                    search: document.getElementById('search').value,
-                    status: document.getElementById('status').value
-                };
-                loadData(filters);
-            });
-            
-            // Carregar dados inicialmente
-            loadData();
-        });
-    </script>
+// Para:
+app.use('/api/alunos', AlunoR);
+app.use('/api/planos', PlanoR);
+app.use('/api/avaliacoes', AvaliacaoR);
+app.use('/api/matriculas', MatriculaR);
+      </pre>
+      
+      <p><strong>Alternativa:</strong> Altere as URLs no frontend para usar o singular</p>
+      
+      <pre>
+// No seu JavaScript, altere de:
+const ENDPOINTS = {
+  alunos: '/api/alunos',
+  planos: '/api/planos',
+  avaliacoes: '/api/avaliacoes',
+  matriculas: '/api/matriculas'
+};
+
+// Para:
+const ENDPOINTS = {
+  alunos: '/api/aluno',
+  planos: '/api/plano', 
+  avaliacoes: '/api/avaliacao',
+  matriculas: '/api/matricula'
+};
+      </pre>
+    </div>
+  </div>
+
+  <script>
+    async function testEndpoint(endpoint) {
+      const resultDiv = document.getElementById(`result-${endpoint}`) || document.getElementById('result-plural');
+      resultDiv.innerHTML = 'Testando...';
+      
+      try {
+        const response = await fetch(`/api/${endpoint}`);
+        const contentType = response.headers.get('content-type') || '';
+        const isJson = contentType.includes('application/json');
+        const text = await response.text();
+        
+        let data;
+        try {
+          data = isJson ? JSON.parse(text) : null;
+        } catch (e) {
+          data = null;
+        }
+        
+        if (response.ok && isJson) {
+          resultDiv.innerHTML = `
+            <div class="success">
+              <strong>✅ SUCCESSO:</strong> Status ${response.status}<br>
+              <strong>Registros retornados:</strong> ${data ? data.length : 'N/A'}<br>
+              <strong>Resposta:</strong> 
+              <pre>${JSON.stringify(data || text.substring(0, 200), null, 2)}</pre>
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="${response.status === 404 ? 'warning' : 'error-details'}">
+              <strong>${response.status === 404 ? '⚠️ ROTA NÃO ENCONTRADA' : '❌ ERRO'}:</strong> Status ${response.status}<br>
+              <strong>Endpoint:</strong> /api/${endpoint}<br>
+              <strong>Tipo de conteúdo:</strong> ${contentType}<br>
+              <strong>Resposta:</strong>
+              <div class="response-info">${escapeHtml(text.substring(0, 200))}${text.length > 200 ? '...' : ''}</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="error-details">
+            <strong>💥 ERRO DE CONEXÃO:</strong> ${error.message}<br>
+            <strong>Endpoint:</strong> /api/${endpoint}
+          </div>
+        `;
+      }
+    }
+    
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+    
+    // Testar automaticamente as rotas no singular
+    setTimeout(() => {
+      testEndpoint('aluno');
+      testEndpoint('plano');
+      testEndpoint('avaliacao');
+      testEndpoint('matricula');
+    }, 1000);
+  </script>
 </body>
 </html>

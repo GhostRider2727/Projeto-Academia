@@ -248,6 +248,14 @@
       overflow-y: auto;
     }
     
+    .api-status {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 5px;
+      border-left: 4px solid var(--accent);
+    }
+    
     @media (max-width: 768px) {
       .header-content {
         flex-direction: column;
@@ -307,6 +315,10 @@
       </div>
     </div>
 
+    <div class="api-status" id="api-status">
+      <strong>Status da API:</strong> Carregando...
+    </div>
+
     <div class="nav-tabs">
       <button class="tab-btn active" data-tab="alunos"><i class="fas fa-users"></i> Alunos</button>
       <button class="tab-btn" data-tab="instrutores"><i class="fas fa-chalkboard-teacher"></i> Instrutores</button>
@@ -361,12 +373,11 @@
             <th>Nome</th>
             <th>Email</th>
             <th>Telefone</th>
-            <th>Especialidade</th>
           </tr>
         </thead>
         <tbody id="instrutores-table-body">
           <tr>
-            <td colspan="5" style="text-align: center;">Clique em "Instrutores" para carregar os dados</td>
+            <td colspan="4" style="text-align: center;">Clique em "Instrutores" para carregar os dados</td>
           </tr>
         </tbody>
       </table>
@@ -512,6 +523,13 @@
       </table>
       <div class="debug-info" id="debug-pagamentos"></div>
     </div>
+
+    <div class="api-status" id="test-results">
+      <h3>Teste de Rotas da API</h3>
+      <p>Clique no botão abaixo para testar todas as rotas da API:</p>
+      <button onclick="testAllEndpoints()" class="btn btn-primary">Testar Todas as Rotas da API</button>
+      <div id="test-results-content" style="margin-top: 15px;"></div>
+    </div>
   </div>
 
   <!-- Notificação -->
@@ -521,26 +539,49 @@
   </div>
 
   <script>
-     // URLs da API - CORREÇÃO DAS ROTAS
-    const ENDPOINTS = {
-      alunos: '/api/alunos',
-      instrutores: '/api/instrutores',
-      treinos: '/api/treinos',
-      planos: '/api/planos',          // Esta rota pode não existir
-      matriculas: '/api/matriculas',  // Esta rota pode não existir
-      avaliacoes: '/api/avaliacoes',  // Esta rota pode não existir
-      pagamentos: '/api/pagamentos'   // Esta rota pode não existir
+    // Dados de exemplo para quando a API não estiver funcionando
+    const EXAMPLE_DATA = {
+      alunos: [
+        { id: 1, nome: "João Silva", email: "joao@email.com", telefone: "(11) 99999-9999", data_nascimento: "1990-05-15" },
+        { id: 2, nome: "Maria Santos", email: "maria@email.com", telefone: "(11) 98888-8888", data_nascimento: "1992-08-20" },
+        { id: 3, nome: "Pedro Oliveira", email: "pedro@email.com", telefone: "(11) 97777-7777", data_nascimento: "1988-12-10" }
+      ],
+      instrutores: [
+        { id: 1, nome: "Carlos Pereira", email: "carlos@academia.com", telefone: "(11) 96666-6666" },
+        { id: 2, nome: "Ana Costa", email: "ana@academia.com", telefone: "(11) 95555-5555" }
+      ],
+      treinos: [
+        { id: 1, aluno_id: 1, instrutor_id: 1, data_criacao: "2023-10-01", objetivo: "Hipertrofia muscular" },
+        { id: 2, aluno_id: 2, instrutor_id: 2, data_criacao: "2023-10-02", objetivo: "Perda de peso" }
+      ],
+      planos: [
+        { id: 1, nome: "Mensal - 3 dias/semana", preco: 180.00, duracao_meses: 1 },
+        { id: 2, nome: "Mensal - Todos os dias", preco: 200.00, duracao_meses: 1 },
+        { id: 3, nome: "Trimestral - 3 dias/semana", preco: 525.00, duracao_meses: 3 }
+      ],
+      matriculas: [
+        { id: 1, aluno_id: 1, plano_id: 2, data_inicio: "2023-10-01", data_fim: "2023-11-01" },
+        { id: 2, aluno_id: 2, plano_id: 1, data_inicio: "2023-10-05", data_fim: "2023-11-05" }
+      ],
+      avaliacoes: [
+        { id: 1, id_aluno: 1, data_avaliacao: "2023-10-01", peso_kg: 78.5, altura: 1.75, imc: 25.63 },
+        { id: 2, id_aluno: 2, data_avaliacao: "2023-10-02", peso_kg: 65.2, altura: 1.65, imc: 23.95 }
+      ],
+      pagamentos: [
+        { id: 1, id_aluno: 1, valor: 200.00, data_pagamento: "2023-10-01", status: "pago" },
+        { id: 2, id_aluno: 2, valor: 180.00, data_pagamento: "2023-10-05", status: "pago" }
+      ]
     };
 
-    // Vamos tentar URLs alternativas baseadas na sua estrutura MVC
-    const ALT_ENDPOINTS = {
-      alunos: '/api/alunos',
-      instrutores: '/api/instrutores',
-      treinos: '/api/treinos',
-      planos: '/api/plano',           // Tentativa com nome singular
-      matriculas: '/api/matricula',   // Tentativa com nome singular
-      avaliacoes: '/api/avaliacao',   // Tentativa com nome singular
-      pagamentos: '/api/pagamento'    // Tentativa com nome singular
+    // URLs da API - usando caminhos relativos
+    const ENDPOINTS = {
+      alunos: '/api/aluno',
+      instrutores: '/api/instrutor',
+      treinos: '/api/treino',
+      planos: '/api/plano',
+      matriculas: '/api/matricula',
+      avaliacoes: '/api/avaliacao',
+      pagamentos: '/api/pagamento'
     };
 
     // Estado da aplicação
@@ -554,11 +595,14 @@
       pagamentos: []
     };
 
+    let useExampleData = false;
+
     // Elementos do DOM
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     const notification = document.getElementById('notification');
     const notificationText = document.getElementById('notification-text');
+    const apiStatus = document.getElementById('api-status');
 
     // Funções de utilidade
     function showNotification(message, type = 'success') {
@@ -570,11 +614,18 @@
       }, 3000);
     }
 
+    function updateApiStatus(message, type = 'info') {
+      apiStatus.innerHTML = `<strong>Status da API:</strong> ${message}`;
+      apiStatus.style.borderLeftColor = 
+        type === 'success' ? 'var(--success)' : 
+        type === 'error' ? 'var(--accent)' : 'var(--secondary)';
+    }
+
     // Função para mostrar dados de debug
     function showDebugInfo(entity, data) {
       const debugElement = document.getElementById(`debug-${entity}`);
       if (debugElement && data && data.length > 0) {
-        debugElement.textContent = `DEBUG: Primeiro item recebido - ${JSON.stringify(data[0])}`;
+        debugElement.textContent = `DEBUG: Primeiro item - ${JSON.stringify(data[0])}`;
       }
     }
 
@@ -609,7 +660,8 @@
         const colCount = document.querySelector(`#${entity}-content table thead tr`).childElementCount;
         tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center;">Carregando dados...</td></tr>`;
         
-        console.log(`Carregando dados de: ${ENDPOINTS[entity]}`);
+        console.log(`Tentando carregar dados de: ${ENDPOINTS[entity]}`);
+        updateApiStatus(`Carregando ${entity}...`);
         
         const response = await fetch(ENDPOINTS[entity]);
         
@@ -633,17 +685,37 @@
           document.getElementById('total-instrutores').textContent = data.length;
         }
         
+        updateApiStatus(`API funcionando para ${entity}`, 'success');
+        
       } catch (error) {
         console.error(`Erro ao carregar ${entity}:`, error);
-        const tableBody = document.getElementById(`${entity}-table-body`);
-        const colCount = document.querySelector(`#${entity}-content table thead tr`).childElementCount;
-        tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red;">Erro: ${error.message}</td></tr>`;
-        showNotification(`Erro ao carregar ${entity}`, 'error');
         
-        // Mostrar erro no debug também
-        const debugElement = document.getElementById(`debug-${entity}`);
-        if (debugElement) {
-          debugElement.textContent = `ERRO: ${error.message}`;
+        // Usar dados de exemplo se a API não estiver funcionando
+        if (EXAMPLE_DATA[entity]) {
+          currentData[entity] = EXAMPLE_DATA[entity];
+          renderTable(entity, EXAMPLE_DATA[entity]);
+          showDebugInfo(entity, EXAMPLE_DATA[entity]);
+          
+          if (entity === 'alunos') {
+            document.getElementById('total-alunos').textContent = EXAMPLE_DATA.alunos.length;
+          } else if (entity === 'instrutores') {
+            document.getElementById('total-instrutores').textContent = EXAMPLE_DATA.instrutores.length;
+          }
+          
+          updateApiStatus(`Usando dados de exemplo para ${entity} (API não disponível)`, 'error');
+          showNotification(`Usando dados de exemplo para ${entity}`, 'warning');
+        } else {
+          const tableBody = document.getElementById(`${entity}-table-body`);
+          const colCount = document.querySelector(`#${entity}-content table thead tr`).childElementCount;
+          tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: red;">Erro: ${error.message}</td></tr>`;
+          
+          // Mostrar erro no debug também
+          const debugElement = document.getElementById(`debug-${entity}`);
+          if (debugElement) {
+            debugElement.textContent = `ERRO: ${error.message}`;
+          }
+          
+          updateApiStatus(`Erro ao carregar ${entity}: ${error.message}`, 'error');
         }
       }
     }
@@ -677,7 +749,6 @@
             <td>${item.nome || 'N/A'}</td>
             <td>${item.email || 'N/A'}</td>
             <td>${item.telefone || '-'}</td>
-            <td>${item.especialidade || 'N/A'}</td>
           `;
         } else if (entity === 'treinos') {
           row.innerHTML = `
@@ -692,7 +763,7 @@
             <td>${item.id}</td>
             <td>${item.nome || 'N/A'}</td>
             <td>R$ ${item.preco ? item.preco.toFixed(2) : '0,00'}</td>
-            <td>${item.duracao_meses || item.duracao || 'N/A'}</td>
+            <td>${item.duracao_meses || 'N/A'}</td>
           `;
         } else if (entity === 'matriculas') {
           row.innerHTML = `
@@ -700,27 +771,27 @@
             <td>${item.aluno_id || 'N/A'}</td>
             <td>${item.plano_id || 'N/A'}</td>
             <td>${item.data_inicio || 'N/A'}</td>
-            <td>${item.data_fim || item.data_termino || 'N/A'}</td>
+            <td>${item.data_fim || 'N/A'}</td>
           `;
         } else if (entity === 'avaliacoes') {
           // Calcular IMC se peso e altura estiverem disponíveis
           const imc = (item.peso_kg && item.altura) 
             ? (item.peso_kg / (item.altura * item.altura)).toFixed(2) 
-            : 'N/A';
+            : (item.imc || 'N/A');
           
           row.innerHTML = `
             <td>${item.id}</td>
             <td>${item.id_aluno || item.aluno_id || 'N/A'}</td>
-            <td>${item.dataavaliacao || item.data_avaliacao || 'N/A'}</td>
+            <td>${item.data_avaliacao || item.dataavaliacao || 'N/A'}</td>
             <td>${item.peso_kg || item.peso || 'N/A'}</td>
-            <td>${item.altura || 'N/A'}</td>
+            <td>${item.altura || item.altura_m || 'N/A'}</td>
             <td>${imc}</td>
           `;
         } else if (entity === 'pagamentos') {
           row.innerHTML = `
             <td>${item.id}</td>
-            <td>${item.aluno_id || 'N/A'}</td>
-            <td>R$ ${item.valor ? item.valor.toFixed(2) : '0,00'}</td>
+            <td>${item.id_aluno || item.aluno_id || 'N/A'}</td>
+            <td>R$ ${item.valor ? item.valor.toFixed(2) : (item.valor_pago ? item.valor_pago.toFixed(2) : '0,00')}</td>
             <td>${item.data_pagamento || item.data || 'N/A'}</td>
             <td>${item.status || 'N/A'}</td>
           `;
@@ -730,11 +801,72 @@
       });
     }
 
+    // Função para testar todas as rotas
+    async function testAllEndpoints() {
+      const endpointsToTest = [
+        '/api/aluno',
+        '/api/instrutor', 
+        '/api/treino',
+        '/api/plano',
+        '/api/matricula',
+        '/api/avaliacao',
+        '/api/pagamento'
+      ];
+      
+      const resultsElement = document.getElementById('test-results-content');
+      resultsElement.innerHTML = '<p>Testando rotas...</p>';
+      
+      let workingEndpoints = 0;
+      let totalEndpoints = endpointsToTest.length;
+      
+      for (const endpoint of endpointsToTest) {
+        try {
+          const response = await fetch(endpoint);
+          const status = response.status;
+          const statusText = response.statusText;
+          
+          resultsElement.innerHTML += `
+            <div style="margin-bottom: 10px; padding: 8px; background: ${status === 200 ? '#e8f5e8' : '#ffebee'}; border-radius: 4px;">
+              <strong>${endpoint}</strong>: 
+              <span style="color: ${status === 200 ? 'green' : 'red'}; font-weight: bold;">
+                ${status} ${statusText}
+              </span>
+              ${status !== 200 ? '<br><small>Verifique se a rota está configurada no servidor</small>' : ''}
+            </div>
+          `;
+          
+          if (status === 200) workingEndpoints++;
+          
+        } catch (error) {
+          resultsElement.innerHTML += `
+            <div style="margin-bottom: 10px; padding: 8px; background: #ffebee; border-radius: 4px;">
+              <strong>${endpoint}</strong>: 
+              <span style="color: red; font-weight: bold;">
+                ERRO: ${error.message}
+              </span>
+              <br><small>Verifique se o servidor está rodando</small>
+            </div>
+          `;
+        }
+      }
+      
+      resultsElement.innerHTML += `
+        <div style="margin-top: 15px; padding: 10px; background: ${workingEndpoints === totalEndpoints ? '#e8f5e8' : '#fff3cd'}; border-radius: 4px;">
+          <strong>Resumo:</strong> ${workingEndpoints} de ${totalEndpoints} rotas funcionando
+          ${workingEndpoints < totalEndpoints ? '<br><small>Algumas rotas podem não estar configuradas no servidor</small>' : ''}
+        </div>
+      `;
+    }
+
     // Carregar dados iniciais
     document.addEventListener('DOMContentLoaded', () => {
       loadData('alunos');
+      
       // Simular receita mensal (em uma aplicação real, isso viria da API)
       document.getElementById('receita-mensal').textContent = '0,00';
+      
+      // Testar automaticamente as rotas após um tempo
+      setTimeout(testAllEndpoints, 2000);
     });
   </script>
 </body>

@@ -1,19 +1,39 @@
-cosnt Aluno = require('../controllers/Aluno');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-// Aluno
 const Aluno = sequelize.define('Aluno', {
-  nome: { type: DataTypes.STRING, allowNull: false },
-  data_nascimento: { type: DataTypes.DATEONLY, allowNull: false },
-  email: { type: DataTypes.STRING, unique: true, allowNull: false },
-  telefone: { type: DataTypes.STRING },
-  senha: { type: DataTypes.STRING, unique: true, allowNull: false }
-}, { tableName: 'alunos', timestamps: false });
-// Exportar funções específicas para cada modelo
-module.exports = {
-  // Operações para Aluno
-  createAluno: createRecord(Aluno),
-  getAlunos: findAllRecords(Aluno),
-  getAlunoById: findRecordById(Aluno),
-  updateAluno: updateRecord(Aluno),
-  deleteAluno: deleteRecord(Aluno),
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  nome: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  data_nascimento: {
+    type: DataTypes.DATEONLY,
+    allowNull: false
+  },
+  email: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
+  },
+  telefone: {
+    type: DataTypes.STRING(15)
+  },
+  senha: {
+    type: DataTypes.STRING(15),
+    allowNull: false,
+    unique: true
+  }
+}, {
+  tableName: 'alunos',
+  timestamps: false
+});
 
+module.exports = Aluno;

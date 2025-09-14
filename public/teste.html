@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Alunos</title>
+</head>
+<body>
+    <h1>Alunos da Academia</h1>
+    
+    <button onclick="carregarAlunos()">Carregar Alunos</button>
+    
+    <div id="resultado">
+        <p>Clique no botão para carregar os alunos.</p>
+    </div>
+
+    <script>
+        async function carregarAlunos() {
+            try {
+                // URL da API baseada na sua configuração do Express
+                const response = await fetch('/api/alunos');
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar alunos: ' + response.status);
+                }
+                
+                const alunos = await response.json();
+                
+                // Formatar a exibição dos alunos
+                let html = '<h2>Lista de Alunos</h2>';
+                
+                if (alunos.length === 0) {
+                    html += '<p>Nenhum aluno encontrado.</p>';
+                } else {
+                    html += '<ul>';
+                    alunos.forEach(aluno => {
+                        html += `<li>ID: ${aluno.id} - Nome: ${aluno.nome} - Email: ${aluno.email}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                
+                document.getElementById('resultado').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('resultado').innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
+                console.error('Erro detalhado:', error);
+            }
+        }
+    </script>
+</body>
+</html>

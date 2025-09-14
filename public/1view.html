@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização de Pagamentos Detalhados</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .data-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        .data-header {
+            padding: 15px 20px;
+            background-color: #6c757d;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .refresh-btn {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #138496;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        
+        .error {
+            color: #dc3545;
+            padding: 15px;
+            text-align: center;
+            background-color: #f8d7da;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .apply-filters {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            align-self: flex-end;
+            margin-bottom: 15px;
+        }
+        
+        .apply-filters:hover {
+            background-color: #218838;
+        }
+        
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+            
+            .data-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Visualização de Pagamentos Detalhados</h1>
+            <p class="description">Dados da view vw_pagamentos_detalhado do banco de dados</p>
+        </header>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="search">Pesquisar</label>
+                <input type="text" id="search" placeholder="Digite para filtrar...">
+            </div>
+            <div class="filter-group">
+                <label for="status">Status</label>
+                <select id="status">
+                    <option value="">Todos</option>
+                    <option value="pago">Pago</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="atrasado">Atrasado</option>
+                </select>
+            </div>
+            <button class="apply-filters" id="applyFilters">Aplicar Filtros</button>
+        </div>
+        
+        <div class="data-container">
+            <div class="data-header">
+                <h2>Registros de Pagamentos</h2>
+                <button class="refresh-btn" id="refreshBtn">Atualizar Dados</button>
+            </div>
+            
+            <div class="loading" id="loading">
+                Carregando dados...
+            </div>
+            
+            <div class="error" id="errorMessage" style="display: none;">
+                Erro ao carregar dados.
+            </div>
+            
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Valor</th>
+                        <th>Data Vencimento</th>
+                        <th>Data Pagamento</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Os dados serão inseridos aqui via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            const applyFiltersBtn = document.getElementById('applyFilters');
+            const loadingElement = document.getElementById('loading');
+            const errorMessage = document.getElementById('errorMessage');
+            const dataTable = document.getElementById('dataTable');
+            const tableBody = document.getElementById('tableBody');
+            
+            // Função para carregar os dados da view
+            async function loadData(filters = {}) {
+                loadingElement.style.display = 'block';
+                errorMessage.style.display = 'none';
+                dataTable.style.display = 'none';
+                
+                try {
+                    // Aqui você faria a chamada para sua API que usa o Sequelize
+                    // Substitua pela URL correta do seu endpoint
+                    let url = '/api/vw_pagamentos_detalhado';
+                    
+                    // Adicionar filtros à URL, se existirem
+                    const queryParams = new URLSearchParams();
+                    if (filters.search) queryParams.append('search', filters.search);
+                    if (filters.status) queryParams.append('status', filters.status);
+                    
+                    if (queryParams.toString()) {
+                        url += '?' + queryParams.toString();
+                    }
+                    
+                    const response = await fetch(url);
+                    
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar dados');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Limpar a tabela
+                    tableBody.innerHTML = '';
+                    
+                    // Preencher a tabela com os dados
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        
+                        // Ajuste estas colunas conforme a estrutura da sua view
+                        row.innerHTML = `
+                            <td>${item.id || ''}</td>
+                            <td>${item.cliente_nome || ''}</td>
+                            <td>R$ ${item.valor ? Number(item.valor).toFixed(2) : '0,00'}</td>
+                            <td>${item.data_vencimento ? formatDate(item.data_vencimento) : ''}</td>
+                            <td>${item.data_pagamento ? formatDate(item.data_pagamento) : ''}</td>
+                            <td><span class="status-badge ${getStatusClass(item.status)}">${item.status || ''}</span></td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                    
+                    // Exibir a tabela e ocultar o loading
+                    loadingElement.style.display = 'none';
+                    dataTable.style.display = 'table';
+                    
+                } catch (error) {
+                    console.error('Erro:', error);
+                    loadingElement.style.display = 'none';
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = 'Erro ao carregar dados: ' + error.message;
+                }
+            }
+            
+            // Função para formatar data
+            function formatDate(dateString) {
+                const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+                return new Date(dateString).toLocaleDateString('pt-BR', options);
+            }
+            
+            // Função para determinar a classe CSS com base no status
+            function getStatusClass(status) {
+                switch (status) {
+                    case 'pago': return 'status-paid';
+                    case 'pendente': return 'status-pending';
+                    case 'atrasado': return 'status-overdue';
+                    default: return '';
+                }
+            }
+            
+            // Event listeners
+            refreshBtn.addEventListener('click', () => loadData());
+            applyFiltersBtn.addEventListener('click', () => {
+                const filters = {
+                    search: document.getElementById('search').value,
+                    status: document.getElementById('status').value
+                };
+                loadData(filters);
+            });
+            
+            // Carregar dados inicialmente
+            loadData();
+        });
+    </script>
+</body>
+</html>

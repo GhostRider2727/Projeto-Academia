@@ -1,177 +1,105 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const { Aluno, Instrutor, Treino, Plano, Matricula,
-  Local, Academia, Maquina, Exercicio, TreinoExercicio,
-  AvaliacaoFisica, Pagamento, PostTimeline, CurtidaPost } = require('./db'); // Importa o model User
+require('dotenv').config({ path: './variaveis.env' });
+
+// Importar rotas (com abreviações)
+const AcademiaR = require('./routes/AcademiaR');
+const AlunoR = require('./routes/alunoR');
+const AvaliacaoR = require('./routes/AvaliacaoR');
+const Curtida_PostR = require('./routes/Curtida_PostR');
+const exercicioR = require('./routes/exercicioR');
+const InstrutorR = require('./routes/InstrutorR');
+const LocalR = require('./routes/LocalR');
+const MaquinaR = require('./routes/MaquinaR');
+const MatriculaR = require('./routes/MatriculaR');
+const PagamentoR = require('./routes/PagamentoR');
+const PlanoR = require('./routes/PlanoR');
+const Post_timelineR = require('./routes/Post_timelineR');
+const TreinoR = require('./routes/TreinoR');
+const Treino_exercicioR = require('./routes/Treino_exercicioR');
+// Importar outras rotas conforme necessário
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.json()); // necessário para req.body funcionar
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Rota principal
+// Configurar EJS como template engine (opcional)
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Rotas da API (com prefixos)
+app.use('/api/academia', AcademiaR);
+app.use('/api/aluno', AlunoR);
+app.use('/api/avaliacao', AvaliacaoR);
+app.use('/api/curtida_post', Curtida_PostR);
+app.use('/api/exercicio', exercicioR);
+app.use('/api/instrutor', InstrutorR);
+app.use('/api/local', LocalR);
+app.use('/api/maquina', MaquinaR);
+app.use('/api/plano', PlanoR);
+app.use('/api/post_timeline', Post_timelineR);
+app.use('/api/matricula', MatriculaR);
+app.use('/api/pagamento', PagamentoR);
+app.use('/api/treino', TreinoR);
+app.use('/api/treino_exercicio', Treino_exercicioR);
+// Adicione outras rotas API aqui
+
+// Rotas básicas (páginas)
 app.get('/', (req, res) => {
-  res.send('Servidor Express funcionando com Sequelize!');
+  res.send('Servidor Express funcionando com Sequelize e PostgreSQL!');
 });
 
-// Página sobre
 app.get('/sobre', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sobre.html'));
 });
 
-// Página login
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
-// Página de views
+
 app.get('/views', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'views.html'));
 });
 
-// Página HTML com botões
-app.get('/views', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'views.html'));
-});
-// Página editar com botões
 app.get('/editar', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'editar.html'));
 });
-
-// Rota alunos
-app.get('/alunos', async (req, res) => {
-  const alunos = await Aluno.findAll();
-  res.json(alunos);
+app.get('/view', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'view.html'));
+});
+app.get('/1editar', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', '1editar.html'));
+});
+app.get('/teste', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'teste.html'));
 });
 
-// Rota avaliacoes
-app.get('/avaliacoes', async (req, res) => {
-  const avaliacoes = await AvaliacaoFisica.findAll({ include: Aluno });
-  res.json(avaliacoes);
-});
-
-// Rota treinos
-app.get('/treinos', async (req, res) => {
-  const treinos = await Treino.findAll({ include: Aluno });
-  res.json(treinos);
-});
-// ROTA CREATE – Inserir aluno (POST)
-app.post('/alunos', async (req, res) => {
-  try {
-    const { nome, email, data_nascimento, telefone, senha } = req.body;
-    const novoAluno = await Aluno.create({ nome, email, data_nascimento, telefone, senha });
-    res.status(201).json(novoAluno);
-  } catch (error) {
-    console.error("Erro ao criar aluno:", error);
-    res.status(500).json({ error: "Não foi possível criar o aluno." });
-  }
-});
-//ROTA READ – Listar todos os alunos (GET)
-app.get('/alunos', async (req, res) => {
-  try {
-    const alunos = await Aluno.findAll();
-    res.json(alunos);
-  } catch (error) {
-    console.error("Erro ao buscar alunos:", error);
-    res.status(500).json({ error: "Não foi possível buscar os alunos." });
-  }
-});
-//ROTA READ – Buscar aluno por ID (GET)
-app.get('/alunos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const aluno = await Aluno.findByPk(id);
-    if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
-    res.json(aluno);
-  } catch (error) {
-    console.error("Erro ao buscar aluno:", error);
-    res.status(500).json({ error: "Não foi possível buscar o aluno." });
-  }
-});
-//ROTA UPDATE – Atualizar aluno (PUT)
-app.put('/alunos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { nome, email, data_nascimento, telefone, senha } = req.body;
-
-    const aluno = await Aluno.findByPk(id);
-    if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
-
-    await aluno.update({ nome, email, data_nascimento, telefone, senha });
-    res.json(aluno);
-  } catch (error) {
-    console.error("Erro ao atualizar aluno:", error);
-    res.status(500).json({ error: "Não foi possível atualizar o aluno." });
-  }
-});
-//ROTA DELETE – Excluir aluno (DELETE)
-app.delete('/alunos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const aluno = await Aluno.findByPk(id);
-    if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
-
-    await aluno.destroy();
-    res.json({ message: "Aluno excluído com sucesso." });
-  } catch (error) {
-    console.error("Erro ao excluir aluno:", error);
-    res.status(500).json({ error: "Não foi possível excluir o aluno." });
-  }
-});
-
-
-
-
-
-// Criar aluno
-app.post('/alunos', async (req, res) => {
-  try {
-    const { nome, email } = req.body;
-    const novoAluno = await Aluno.create({ nome, email });
-    res.status(201).json(novoAluno);
-  } catch (error) {
-    console.error("Erro ao criar aluno:", error);
-    res.status(500).json({ error: "Não foi possível criar o aluno." });
-  }
-});
-
-// Listar alunos
-app.get('/alunos', async (req, res) => {
-  try {
-    const alunos = await Aluno.findAll();
-    res.json(alunos);
-  } catch (error) {
-    console.error("Erro ao buscar alunos:", error);
-    res.status(500).json({ error: "Não foi possível buscar os alunos." });
-  }
-});
-
-// Buscar aluno por ID
-app.get('/alunos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const aluno = await Aluno.findByPk(id);
-
-    if (!aluno) {
-      return res.status(404).json({ error: "Aluno não encontrado." });
-    }
-    res.json(aluno);
-  } catch (error) {
-    console.error("Erro ao buscar aluno:", error);
-    res.status(500).json({ error: "Não foi possível buscar o aluno." });
-  }
-});
-
-// Página de erro 404 (sempre por último)
+// Página de erro 404
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', 'erro_404.html'));
 });
 
-// --- INÍCIO DO SERVIDOR ---
-app.listen(port, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+// Tratamento de erros global
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Algo deu errado!' });
 });
-//git config --global user.name "Manganao"
-//git config --global user.email "ens_gabrielbielick@ugv.edu.br"
+
+// Sincronizar com o banco de dados e iniciar servidor
+const { sequelize } = require('./models');
+
+sequelize.sync({ force: false })
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+      console.log(`📊 Conectado ao PostgreSQL`);
+    });
+  })
+  .catch(err => {
+    console.error('Não foi possível conectar ao banco de dados:', err);
+  });
