@@ -299,6 +299,79 @@
     </div>
   </header>
 
+
+  <button onclick="openModal(modalCadastro)">Cadastrar</button>
+<button onclick="openModal(modalExcluir)">Excluir</button>
+
+
+     <!-- Modal de Cadastro de Aluno -->
+<div class="modal" id="modal-cadastro">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-user-plus"></i> Cadastrar Novo Aluno</h2>
+      <button class="close-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-cadastro">
+        <div class="form-group">
+          <label for="nome">Nome Completo *</label>
+          <input type="text" id="nome" name="nome" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="data_nascimento">Data de Nascimento *</label>
+          <input type="date" id="data_nascimento" name="data_nascimento" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="telefone">Telefone</label>
+          <input type="tel" id="telefone" name="telefone" placeholder="(11) 99999-9999">
+        </div>
+        
+        <div class="form-group">
+          <label for="senha">Senha *</label>
+          <input type="password" id="senha" name="senha" required minlength="6">
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Cadastrar Aluno
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal" id="modal-excluir">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão</h2>
+      <button class="close-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Tem certeza que deseja excluir o aluno <strong id="nome-aluno-excluir"></strong>?</p>
+      <p class="warning-text" style="color: var(--accent); margin-top: 10px;">
+        <i class="fas fa-exclamation-circle"></i> Esta ação não pode ser desfeita!
+      </p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel close-modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmar-exclusao">
+          <i class="fas fa-trash"></i> Sim, Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <div class="container">
     <div class="stats">
       <div class="stat-card">
@@ -868,6 +941,143 @@
       // Testar automaticamente as rotas após um tempo
       setTimeout(testAllEndpoints, 2000);
     });
+
+
+
+// ======= MODAL: ABRIR E FECHAR =======
+const modalCadastro = document.getElementById('modal-cadastro');
+const modalExcluir = document.getElementById('modal-excluir');
+const closeButtons = document.querySelectorAll('.close-modal');
+
+// Função para abrir o modal
+function openModal(modal) {
+  modal.style.display = 'flex';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.background = 'rgba(0,0,0,0.5)';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.querySelector('.modal-content').style.background = '#fff';
+  modal.querySelector('.modal-content').style.padding = '20px';
+  modal.querySelector('.modal-content').style.borderRadius = '10px';
+}
+
+// Função para fechar modais
+closeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modalCadastro.style.display = 'none';
+    modalExcluir.style.display = 'none';
+  });
+});
+
+// ======= ABRIR MODAL DE CADASTRO =======
+const btnAddAluno = document.createElement('button');
+btnAddAluno.className = 'btn btn-primary';
+btnAddAluno.innerHTML = '<i class="fas fa-user-plus"></i> Novo Aluno';
+btnAddAluno.addEventListener('click', () => openModal(modalCadastro));
+document.querySelector('#alunos-content .action-bar').appendChild(btnAddAluno);
+
+// ======= SUBMIT DO FORMULÁRIO DE CADASTRO =======
+document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const form = e.target;
+  const aluno = {
+    nome: form.nome.value.trim(),
+    data_nascimento: form.data_nascimento.value,
+    email: form.email.value.trim(),
+    telefone: form.telefone.value.trim(),
+    senha: form.senha.value.trim()
+  };
+
+  try {
+    const response = await fetch('/api/aluno', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(aluno)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro ${response.status} ao cadastrar aluno`);
+    }
+
+    showNotification('Aluno cadastrado com sucesso!', 'success');
+    modalCadastro.style.display = 'none';
+    form.reset();
+
+    // Atualizar lista de alunos
+    loadData('alunos');
+  } catch (error) {
+    console.error('Erro no cadastro:', error);
+    showNotification('Erro ao cadastrar aluno: ' + error.message, 'error');
+  }
+});
+
+// ======= EXCLUIR ALUNO =======
+let alunoParaExcluir = null;
+
+function abrirModalExcluir(id, nome) {
+  alunoParaExcluir = id;
+  document.getElementById('nome-aluno-excluir').textContent = nome;
+  openModal(modalExcluir);
+}
+
+document.getElementById('confirmar-exclusao').addEventListener('click', async () => {
+  if (!alunoParaExcluir) return;
+
+  try {
+    const response = await fetch(`/api/aluno/${alunoParaExcluir}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`Erro ${response.status} ao excluir aluno`);
+    showNotification('Aluno excluído com sucesso!', 'success');
+    modalExcluir.style.display = 'none';
+    loadData('alunos');
+  } catch (error) {
+    console.error('Erro ao excluir:', error);
+    showNotification('Erro ao excluir aluno: ' + error.message, 'error');
+  }
+});
+
+// ======= ADICIONAR BOTÕES DE AÇÃO NA TABELA =======
+function renderTable(entity, data) {
+  const tableBody = document.getElementById(`${entity}-table-body`);
+  tableBody.innerHTML = '';
+
+  if (!data || data.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Nenhum dado encontrado</td></tr>`;
+    return;
+  }
+
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    if (entity === 'alunos') {
+      tr.innerHTML = `
+        <td>${item.id}</td>
+        <td>${item.nome}</td>
+        <td>${item.email}</td>
+        <td>${item.telefone || '-'}</td>
+        <td>${item.data_nascimento || '-'}</td>
+        <td style="text-align:right;">
+          <button class="btn btn-danger" onclick="abrirModalExcluir(${item.id}, '${item.nome}')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      `;
+    } else {
+      // Caso seja outra tabela (instrutores, planos etc.)
+      tr.innerHTML = Object.values(item)
+        .map(v => `<td>${v}</td>`)
+        .join('');
+    }
+    tableBody.appendChild(tr);
+  });
+}
+
+
+
+
   </script>
 </body>
 </html>
